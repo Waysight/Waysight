@@ -1,6 +1,7 @@
+mod device;
 use super::Backend;
 
-struct DrmBackend {}
+pub struct DrmBackend {}
 
 impl Backend for DrmBackend {
     fn initialize() {}
