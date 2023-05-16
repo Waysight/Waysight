@@ -1,0 +1,27 @@
+name: Build waysight
+on: 
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Compile waysight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install wayland-protocols libwayland-dev libglvnd-dev libseat-dev libgbm-dev libinput-dev libudev-dev libsystemd-dev pkg-config
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build 
