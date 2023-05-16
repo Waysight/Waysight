@@ -25,10 +25,6 @@ fn parse_args(args: Vec<String>) {
         // represents args without a value attached to them
         match arg.split_once("=") {
             Some((key, value)) => match (key, value) {
-                ("-h", _) => {
-                    print_usage();
-                    return;
-                }
                 _ => {
                     print_usage();
                     return;
