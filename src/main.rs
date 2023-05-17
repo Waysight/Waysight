@@ -4,7 +4,7 @@ fn print_usage() {
     let usage_str = "Waysight, the insightful wayland compositor
 
 Usage:
-    waysight [ [-a] [--arg] [-k=<value>] [--key=<value>] ]
+    waysight [ [-a] [--arg] [-k=<value>] [--key=<value>] [-ab -c=<value>] ]
 
 Options:
     -h        --help            Outputs the usage of the waysight command
@@ -31,16 +31,21 @@ fn parse_args(args: Vec<String>) {
                 }
             },
             None => {
-                match arg.as_str() {
-                    "-h" | "--help" => {
-                        print_usage();
-                        return;
+                if arg.starts_with("--") {
+                    match arg.as_str() {
+                        "--help" => print_usage(),
+                        _ => print_usage(),
                     }
-                    _ => {
-                        print_usage();
-                        return;
-                    }
-                };
+                } else if arg.starts_with('-') {
+                    arg.chars().for_each(|flag| match flag {
+                        '-' => {}
+                        'h' => print_usage(),
+                        _ => {
+                            println!("Unknown flag");
+                            print_usage();
+                        }
+                    })
+                }
             }
         }
     }
