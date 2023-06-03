@@ -1425,6 +1425,7 @@ version = "0.1.0"
 dependencies = [
  "smithay",
  "smithay-drm-extras",
+ "thiserror",
  "tracing",
 ]
 

@@ -1,5 +1,5 @@
 mod device;
-use super::Backend;
+use crate::state::Backend;
 
 pub struct DrmBackend {}
 

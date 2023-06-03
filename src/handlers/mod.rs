@@ -1,1 +1,2 @@
-pub mod wsoutput;
+mod compositor;
+mod seat;
