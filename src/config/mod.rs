@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::{
-    borrow::Borrow,
     env,
     fs::{self, File},
     io::{self, Write},
@@ -13,6 +12,8 @@ use crate::USER_DATA;
 
 #[derive(Serialize, Deserialize)]
 pub struct WaysightConfig {
+    #[serde(default = "default_num_workspaces")]
+    pub workspaces: u32,
     pub input: InputConfig,
 }
 
@@ -65,13 +66,11 @@ pub fn generate_config(user_path: Option<PathBuf>) -> Result<PathBuf, ConfigErro
         Some(path) => path,
         None => {
             if let Ok(config_dir) = env::var("XDG_CONFIG_HOME") {
-                tracing::info!("here");
                 let mut path = PathBuf::new();
                 path.push(config_dir);
                 path.push("waysight/config.toml");
                 path
             } else {
-                tracing::info!("also here");
                 let home_dir = env::var("HOME").map_err(|_| ConfigError::InvalidPath)?;
                 let mut path = PathBuf::new();
                 path.push(home_dir);
@@ -80,7 +79,6 @@ pub fn generate_config(user_path: Option<PathBuf>) -> Result<PathBuf, ConfigErro
             }
         }
     };
-    tracing::info!("hereeee");
     if !path.exists() {
         // I am so sorry
         let og_path = path.clone();
@@ -96,6 +94,7 @@ pub fn generate_config(user_path: Option<PathBuf>) -> Result<PathBuf, ConfigErro
     };
 
     let config = WaysightConfig {
+        workspaces: 10,
         input: input_config,
     };
 
@@ -143,4 +142,8 @@ impl WaysightConfig {
 
 pub fn default_layout() -> String {
     "us".to_owned()
+}
+
+pub fn default_num_workspaces() -> u32 {
+    10
 }
