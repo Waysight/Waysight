@@ -1,7 +1,4 @@
-use std::{
-    os::fd::BorrowedFd,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use smithay::{
     input::{pointer::CursorImageStatus, Seat, SeatState},
@@ -21,6 +18,11 @@ use smithay::{
         socket::ListeningSocketSource,
     },
 };
+use static_init::lazy::Lazy;
+
+use crate::config::WaysightConfig;
+
+pub static CONFIG: Lazy<WaysightConfig> = Lazy::from_generator(WaysightConfig::load_config);
 
 // Our loop data
 pub struct CalloopData<B: Backend + 'static> {

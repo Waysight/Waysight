@@ -1,7 +1,7 @@
 use std::env;
 
-mod drm;
-mod winit;
+pub mod drm;
+pub mod winit;
 
 pub fn backend_init_from_name(name: &str) {
     match name {

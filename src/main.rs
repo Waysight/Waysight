@@ -1,6 +1,6 @@
 use std::{env::args, io, path::PathBuf};
 use tracing::error;
-use waysight::{UserData, USER_DATA};
+use waysight::{state::CONFIG, UserData, USER_DATA};
 
 fn print_usage() {
     let usage_str = "Waysight, the insightful wayland compositor
@@ -27,7 +27,7 @@ fn parse_args(args: Vec<String>, data: &mut UserData) {
         // represents args without a value attached to them
         match arg.split_once("=") {
             Some((key, value)) => match (key, value) {
-                ("--config" | "c", config_path) => {
+                ("--config" | "-c", config_path) => {
                     data.config_path = Some(PathBuf::from(config_path));
                 }
                 _ => {
@@ -67,8 +67,11 @@ fn main() {
     };
     let mut args: Vec<String> = args().collect();
     args.remove(0);
+    let mut mutex_data = USER_DATA.lock().unwrap();
     // Saves speed by not parsing a 0 length argument vec
     if args.len() != 0 {
-        parse_args(args, &mut *USER_DATA.lock().unwrap());
+        parse_args(args, &mut mutex_data);
     }
+    drop(mutex_data);
+    tracing::info!("keyboard layout: {}", CONFIG.input.keyboard_layout)
 }

@@ -65,11 +65,13 @@ pub fn generate_config(user_path: Option<PathBuf>) -> Result<PathBuf, ConfigErro
         Some(path) => path,
         None => {
             if let Ok(config_dir) = env::var("XDG_CONFIG_HOME") {
+                tracing::info!("here");
                 let mut path = PathBuf::new();
                 path.push(config_dir);
                 path.push("waysight/config.toml");
                 path
             } else {
+                tracing::info!("also here");
                 let home_dir = env::var("HOME").map_err(|_| ConfigError::InvalidPath)?;
                 let mut path = PathBuf::new();
                 path.push(home_dir);
@@ -78,11 +80,15 @@ pub fn generate_config(user_path: Option<PathBuf>) -> Result<PathBuf, ConfigErro
             }
         }
     };
-
+    tracing::info!("hereeee");
     if !path.exists() {
+        // I am so sorry
+        let og_path = path.clone();
+        let file_name = og_path.file_name().unwrap();
         path.pop();
         fs::create_dir_all(&path).map_err(|err| ConfigError::IOError(err))?;
-        path.push(path.clone().file_name().unwrap());
+        path.push(file_name);
+        tracing::info!("passed directory creation");
     };
 
     let input_config = InputConfig {
@@ -104,8 +110,10 @@ pub fn generate_config(user_path: Option<PathBuf>) -> Result<PathBuf, ConfigErro
 
 impl WaysightConfig {
     pub fn load_config() -> WaysightConfig {
-        match parse(USER_DATA.lock().unwrap().config_path.clone()) {
+        let mutex_data = USER_DATA.lock().unwrap();
+        match parse(mutex_data.config_path.clone()) {
             Ok(config) => {
+                drop(mutex_data);
                 return config;
             }
             Err(error) => match error {
@@ -113,8 +121,8 @@ impl WaysightConfig {
                     tracing::error!(
                         "Cannot find a valid config file. Generating one automatically."
                     );
-                    let config_path =
-                        generate_config(USER_DATA.lock().unwrap().config_path.clone()).unwrap();
+                    let config_path = generate_config(mutex_data.config_path.clone()).unwrap();
+                    drop(mutex_data);
                     parse(Some(config_path)).unwrap()
                 }
                 ConfigError::MalformedConfig(err) => {
