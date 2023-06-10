@@ -1,15 +1,12 @@
 use std::env;
 
-use crate::state::Backend;
-
-use self::{drm::DrmBackend, winit::WinitBackend};
 mod drm;
 mod winit;
 
 pub fn backend_init_from_name(name: &str) {
     match name {
-        "drm" => DrmBackend::initialize(),
-        "winit" => WinitBackend::initialize(),
+        "drm" => drm::initialize(),
+        "winit" => winit::initialize(),
         _ => {
             tracing::error!("Unknown backend");
         }

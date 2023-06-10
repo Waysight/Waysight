@@ -1,7 +1,15 @@
 use smithay::{
     backend::renderer::utils,
-    reexports::wayland_server::{protocol::wl_surface::WlSurface, Client},
-    wayland::compositor::{self, CompositorHandler, CompositorState},
+    delegate_compositor, delegate_shm,
+    reexports::wayland_server::{
+        protocol::{wl_buffer::WlBuffer, wl_surface::WlSurface},
+        Client,
+    },
+    wayland::{
+        buffer::BufferHandler,
+        compositor::{self, CompositorHandler, CompositorState},
+        shm::{ShmHandler, ShmState},
+    },
 };
 
 use crate::state::{Backend, ClientState, Waysight};
@@ -20,10 +28,24 @@ impl<B: Backend + 'static> CompositorHandler for Waysight<B> {
 
     fn commit(&mut self, surface: &WlSurface) {
         utils::on_commit_buffer_handler::<Self>(surface);
-
-        let mut root = surface;
-        if let Some(parent) = compositor::get_parent(root) {
-            root = &parent;
+        if !compositor::is_sync_subsurface(surface) {
+            let mut root = surface.clone();
+            while let Some(parent) = compositor::get_parent(&root) {
+                root = parent;
+            }
         }
     }
 }
+
+impl<B: Backend + 'static> ShmHandler for Waysight<B> {
+    fn shm_state(&self) -> &ShmState {
+        &self.shm_state
+    }
+}
+
+impl<B: Backend + 'static> BufferHandler for Waysight<B> {
+    fn buffer_destroyed(&mut self, _buffer: &WlBuffer) {}
+}
+
+delegate_compositor!(@<B: Backend + 'static> Waysight<B>);
+delegate_shm!(@<B: Backend + 'static> Waysight<B>);

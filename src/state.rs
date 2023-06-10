@@ -1,7 +1,10 @@
-use std::{os::fd::BorrowedFd, sync::Arc};
+use std::{
+    os::fd::BorrowedFd,
+    sync::{Arc, Mutex},
+};
 
 use smithay::{
-    input::SeatState,
+    input::{pointer::CursorImageStatus, Seat, SeatState},
     reexports::{
         calloop::{
             generic::Generic, EventLoop, Interest, LoopHandle, LoopSignal, Mode, PostAction,
@@ -28,6 +31,7 @@ pub struct CalloopData<B: Backend + 'static> {
 // Base struct for storing any wayland globals and handling requests
 pub struct Waysight<B: Backend + 'static> {
     pub display_handle: DisplayHandle,
+    pub cursor_image_status: Arc<Mutex<CursorImageStatus>>,
     pub compositor: CompositorState,
     pub loop_handle: LoopHandle<'static, CalloopData<B>>,
     pub loop_signal: LoopSignal,
@@ -35,6 +39,7 @@ pub struct Waysight<B: Backend + 'static> {
     pub shm_state: ShmState,
     pub seat_state: SeatState<Self>,
     pub seat_name: String,
+    pub seat: Seat<Self>,
     pub socket_name: String,
 }
 
@@ -95,10 +100,17 @@ impl<B: Backend + 'static> Waysight<B> {
         let socket_name = init_wl_socket(&event_loop.handle(), display);
         let loop_handle = event_loop.handle();
         let loop_signal = event_loop.get_signal();
+
+        let mut seat_state = SeatState::<Self>::new();
+        let seat_name = backend_data.seat_name();
+        let seat = seat_state.new_wl_seat(&display_handle, &seat_name);
+
+        let compositor = CompositorState::new::<Self>(&display_handle);
+        let shm_state = ShmState::new::<Self>(&display_handle, []);
     }
 }
 
 pub trait Backend {
-    fn initialize();
+    fn seat_name(&self) -> String;
     // TODO: add more methods
 }
