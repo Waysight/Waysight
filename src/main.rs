@@ -73,5 +73,5 @@ fn main() {
         parse_args(args, &mut mutex_data);
     }
     drop(mutex_data);
-    tracing::info!("keyboard layout: {}", CONFIG.input.keyboard_layout)
+    tracing::debug!("keyboard layout: {}", CONFIG.input.keyboard_layout)
 }

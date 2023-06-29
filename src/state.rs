@@ -1,6 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    os::fd::AsRawFd,
+    sync::{Arc, Mutex},
+};
 
 use smithay::{
+    delegate_output,
     input::{pointer::CursorImageStatus, Seat, SeatState},
     reexports::{
         calloop::{
@@ -13,6 +17,7 @@ use smithay::{
     },
     wayland::{
         compositor::{CompositorClientState, CompositorState},
+        output::OutputManagerState,
         shell::xdg::XdgShellState,
         shm::ShmState,
         socket::ListeningSocketSource,
@@ -43,6 +48,7 @@ pub struct Waysight<B: Backend + 'static> {
     pub seat_name: String,
     pub seat: Seat<Self>,
     pub socket_name: String,
+    pub output_state: OutputManagerState,
 }
 
 #[derive(Default)]
@@ -60,7 +66,7 @@ impl ClientData for ClientState {
 
 fn init_wl_socket<B: Backend + 'static>(
     handle: &LoopHandle<'static, CalloopData<B>>,
-    display: &'static mut Display<Waysight<B>>,
+    display: &mut Display<Waysight<B>>,
 ) -> Option<String> {
     let socket_source = match ListeningSocketSource::new_auto() {
         Ok(socket) => socket,
@@ -81,7 +87,11 @@ fn init_wl_socket<B: Backend + 'static>(
 
     handle
         .insert_source(
-            Generic::new(display.backend().poll_fd(), Interest::READ, Mode::Level),
+            Generic::new(
+                display.backend().poll_fd().as_raw_fd(),
+                Interest::READ,
+                Mode::Level,
+            ),
             |_, _: &mut _, data| {
                 data.display.dispatch_clients(&mut data.state).unwrap();
                 Ok(PostAction::Continue)
@@ -95,7 +105,7 @@ fn init_wl_socket<B: Backend + 'static>(
 impl<B: Backend + 'static> Waysight<B> {
     pub fn new(
         event_loop: EventLoop<'static, CalloopData<B>>,
-        display: &'static mut Display<Waysight<B>>,
+        display: &mut Display<Self>,
         backend_data: B,
     ) {
         let display_handle = display.handle().clone();
@@ -109,6 +119,9 @@ impl<B: Backend + 'static> Waysight<B> {
 
         let compositor = CompositorState::new::<Self>(&display_handle);
         let shm_state = ShmState::new::<Self>(&display_handle, []);
+
+        let output_state = OutputManagerState::new_with_xdg_output::<Self>(&display_handle);
+        let cursor_image_status = Arc::new(Mutex::new(CursorImageStatus::Default));
     }
 }
 
@@ -116,3 +129,5 @@ pub trait Backend {
     fn seat_name(&self) -> String;
     // TODO: add more methods
 }
+
+delegate_output!(@<B: Backend + 'static> Waysight<B>);

@@ -4,7 +4,7 @@ use smithay::{
         libinput::LibinputInputBackend,
         winit::WinitInput,
     },
-    input::keyboard::{FilterResult, XkbConfig},
+    input::keyboard::{FilterResult, KeysymHandle, ModifiersState, XkbConfig},
     utils::{SerialCounter, SERIAL_COUNTER},
 };
 
@@ -48,6 +48,13 @@ impl Waysight<DrmBackend> {
 }
 
 impl Waysight<WinitBackend> {
+    fn on_keyboard_input<T>(
+        &mut self,
+        modifier_state: &ModifiersState,
+        keysym: KeysymHandle<'_>,
+    ) -> FilterResult<T> {
+        FilterResult::Forward
+    }
     pub fn parse_input_event_winit(&mut self, event: InputEvent<WinitInput>) {
         match event {
             InputEvent::DeviceAdded { device } => {
@@ -70,10 +77,12 @@ impl Waysight<WinitBackend> {
                 keyboard.input(
                     self,
                     event.key_code(),
-                    KeyState::Pressed,
+                    event.state(),
                     SERIAL_COUNTER.next_serial(),
                     Event::time_msec(&event),
-                    |state, modifier_state, key_code| FilterResult::<i32>::Forward,
+                    |state, modifier_state, keysym| {
+                        state.on_keyboard_input::<i32>(modifier_state, keysym)
+                    },
                 );
             }
             _ => {}
